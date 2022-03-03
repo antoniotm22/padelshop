@@ -8,7 +8,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -21,7 +22,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role'
+        'puntos',
+        'admin'
     ];
 
     /**
@@ -42,4 +44,31 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function tipos(){
+        return $this->belongsToMany(Tipo::class)->withTimestamps();
+    }
+
+    public function tiposAutorizados($tipos){
+        abort_unless($this->hasAnyTipo($tipos),401);
+        return true;
+    }
+
+    public function hasAnyTipo($tipos){
+        if (is_array($tipos)){
+            foreach ($tipos as $tipo){
+                if ($this->hasTipo($tipo)){
+                    return true;
+                }
+            }
+        }
+    }
+
+    public function hasTipo($tipo){
+        if ($this->tipos()->where('name',$tipo)->first()){
+            return true;
+        }
+        return  false;
+    }
+
 }
